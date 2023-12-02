@@ -64,24 +64,17 @@ func parseLine2(line string) (int, error) {
 
 func tokenize(line string) []string {
 	result := make([]string, 0)
-	for i := 0; i < len(line); {
+	for i := 0; i < len(line); i += 1 {
 		if line[i] >= '0' && line[i] <= '9' {
 			result = append(result, string(line[i]))
-			i++
 		} else {
 			strs := []string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
 			digits := []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}
-			found := false
 			for j := range strs {
 				if len(line[i:]) >= len(strs[j]) && line[i:i+len(strs[j])] == strs[j] {
 					result = append(result, digits[j])
-					i += len(strs[j])
-					found = true
 					break
 				}
-			}
-			if !found {
-				i++
 			}
 		}
 	}
