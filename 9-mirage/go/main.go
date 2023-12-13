@@ -28,7 +28,7 @@ func solve(reader io.Reader) (int, error) {
 		nums := lo.Map(strings.Split(line, " "), func(s string, _ int) int {
 			return lo.Must(strconv.Atoi(s))
 		})
-		sum += next(nums)
+		sum += prev(nums)
 	}
 	return sum, nil
 }
@@ -44,6 +44,19 @@ func next(nums []int) int {
 		diffs[i] = nums[i+1] - nums[i]
 	}
 	return nums[len(nums)-1] + next(diffs)
+}
+
+func prev(nums []int) int {
+	if lo.EveryBy(nums, func(n int) bool {
+		return n == 0
+	}) {
+		return 0
+	}
+	diffs := make([]int, len(nums)-1)
+	for i := range diffs {
+		diffs[i] = nums[i+1] - nums[i]
+	}
+	return nums[0] - prev(diffs)
 }
 
 func main() {
