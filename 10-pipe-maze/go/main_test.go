@@ -59,3 +59,23 @@ L7JLJL-JLJLJL--JLJ.L`
 		assert.Equal(t, 10, lo.Must(solve2(strings.NewReader(input))))
 	})
 }
+
+func TestPolygonArea(t *testing.T) {
+	poly := Polygon{
+		{0, 0},
+		{0, 1},
+		{1, 1},
+		{1, 0},
+	}
+	assert.Equal(t, 1, poly.Area())
+}
+
+func TestPerimeterArea(t *testing.T) {
+	perim := Perimeter{
+		{0, 0},
+		{0, 1},
+		{1, 1},
+		{1, 0},
+	}
+	assert.Equal(t, 0, perim.Area())
+}

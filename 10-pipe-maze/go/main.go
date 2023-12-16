@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
 )
 
 func solveFile(path string) (int, error) {
@@ -80,7 +79,23 @@ func (p Point) String() string {
 
 type Polygon []Point
 
-func (p Polygon) Vertices() Polygon {
+func (p Polygon) Area() int {
+	sum := 0
+	for i := range p {
+		j := (i + 1) % len(p)
+		sum += p[i].X * p[j].Y
+		sum -= p[j].X * p[i].Y
+	}
+	area := sum / 2
+	if area < 0 {
+		area = -area
+	}
+	return area
+}
+
+type Perimeter []Point
+
+func (p Perimeter) Vertices() Polygon {
 	vertices := make(Polygon, 0)
 	for i := range p {
 		left := p[(i+len(p)-1)%len(p)]
@@ -93,23 +108,13 @@ func (p Polygon) Vertices() Polygon {
 	return vertices
 }
 
-func (p Polygon) Area() int {
-	sum := 0
-	for i := range p {
-		j := (i + 1) % len(p)
-		sum += p[i].X * p[j].Y
-		sum -= p[j].X * p[i].Y
-	}
-	sum -= len(p)
-	return sum / 2
+func (p Perimeter) Area() int {
+	return p.Vertices().Area() - len(p)/2 + 1
 }
 
 func findInsideArea(lines []string) int {
-	poly := getLoop(lines)
-	points := poly.Vertices()
-	slices.Reverse(points) // TODO: needed?
-	fmt.Println(points)
-	return points.Area()
+	perimeter := getLoop(lines)
+	return perimeter.Area()
 }
 
 func printBoard(lines []string, loop map[Point]bool, insides map[Point]bool) {
@@ -128,11 +133,11 @@ func printBoard(lines []string, loop map[Point]bool, insides map[Point]bool) {
 	}
 }
 
-func getLoop(lines []string) Polygon {
+func getLoop(lines []string) Perimeter {
 	start := findStart(lines)
 	current := start
 	visited := make(map[Point]bool)
-	points := make(Polygon, 0)
+	points := make(Perimeter, 0)
 	length := 0
 	for {
 		visited[current] = true
