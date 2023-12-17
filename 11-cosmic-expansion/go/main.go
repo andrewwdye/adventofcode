@@ -19,6 +19,8 @@ func main() {
 	switch os.Args[1] {
 	case "1":
 		result, err = galaxy.Solve1(f)
+	case "2":
+		result, err = galaxy.Solve2(f, 1000000)
 	default:
 		err = fmt.Errorf("invalid argument")
 	}
