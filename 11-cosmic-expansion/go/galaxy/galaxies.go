@@ -1,4 +1,4 @@
-package main
+package galaxy
 
 import (
 	"bufio"
@@ -9,13 +9,31 @@ import (
 	"github.com/samber/lo"
 )
 
-func solve1(reader io.Reader) (int, error) {
-	_ = ParseUniverse(reader)
-	return 0, nil
+func Solve1(reader io.Reader) (int, error) {
+	univ := ParseUniverse(reader)
+	sum := 0
+	for i, galaxy := range univ.Galaxies {
+		for _, other := range univ.Galaxies[i+1:] {
+			sum += galaxy.Distance(other)
+		}
+	}
+	return sum, nil
 }
 
 type Location struct {
 	X, Y int
+}
+
+func (l Location) Distance(other Location) int {
+	dx := l.X - other.X
+	if dx < 0 {
+		dx = -dx
+	}
+	dy := l.Y - other.Y
+	if dy < 0 {
+		dy = -dy
+	}
+	return dx + dy
 }
 
 func (l Location) String() string {
@@ -41,7 +59,24 @@ func ParseUniverse(reader io.Reader) Universe {
 		lines = append(lines, line)
 	}
 
-	// insert rows
+	expanded := expand(lines)
+	universe := Universe{
+		Width:    len(expanded[0]),
+		Height:   len(expanded),
+		Original: lines,
+		Expanded: expanded,
+	}
+	for row, line := range expanded {
+		for col := range line {
+			if line[col] == '#' {
+				universe.Galaxies = append(universe.Galaxies, Location{col, row})
+			}
+		}
+	}
+	return universe
+}
+
+func expand(lines []string) []string {
 	expandedLines := []string{}
 	for _, line := range lines {
 		expandedLines = append(expandedLines, line)
@@ -51,30 +86,16 @@ func ParseUniverse(reader io.Reader) Universe {
 			expandedLines = append(expandedLines, line)
 		}
 	}
-
-	// insert columns
+	expanded := 0
 	for i := range lines[0] {
 		if lo.EveryBy(lines, func(line string) bool {
 			return line[i] == '.'
 		}) {
 			for j := range expandedLines {
-				expandedLines[j] = expandedLines[j][:i] + expandedLines[j][i:i+1] + expandedLines[j][i:]
+				expandedLines[j] = expandedLines[j][:i+expanded] + "." + expandedLines[j][i+expanded:]
 			}
+			expanded += 1
 		}
 	}
-
-	universe := Universe{
-		Width:    len(expandedLines[0]),
-		Height:   len(expandedLines),
-		Original: lines,
-		Expanded: expandedLines,
-	}
-	for row, line := range expandedLines {
-		for col := range line {
-			if line[col] == '#' {
-				universe.Galaxies = append(universe.Galaxies, Location{col, row})
-			}
-		}
-	}
-	return universe
+	return expandedLines
 }

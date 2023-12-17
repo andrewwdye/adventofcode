@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/andrewwdye/adventofcode2023/11-cosmic-expansion/go/galaxy"
 )
 
 func main() {
@@ -16,7 +18,7 @@ func main() {
 	var result int
 	switch os.Args[1] {
 	case "1":
-		result, err = solve1(f)
+		result, err = galaxy.Solve1(f)
 	default:
 		err = fmt.Errorf("invalid argument")
 	}
