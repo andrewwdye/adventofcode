@@ -1,4 +1,4 @@
-package galaxy
+package pkg
 
 import (
 	"bufio"

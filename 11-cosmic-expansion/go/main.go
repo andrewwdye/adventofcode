@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/andrewwdye/adventofcode2023/11-cosmic-expansion/go/galaxy"
+	"github.com/andrewwdye/adventofcode2023/11-cosmic-expansion/go/pkg"
 )
 
 func main() {
@@ -18,9 +18,9 @@ func main() {
 	var result int
 	switch os.Args[1] {
 	case "1":
-		result, err = galaxy.Solve1(f)
+		result, err = pkg.Solve1(f)
 	case "2":
-		result, err = galaxy.Solve2(f, 1000000)
+		result, err = pkg.Solve2(f, 1000000)
 	default:
 		err = fmt.Errorf("invalid argument")
 	}
