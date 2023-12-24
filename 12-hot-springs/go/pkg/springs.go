@@ -14,6 +14,7 @@ import (
 type PrecomputedEntry struct {
 	RecordIndex int
 	WaysIndex   int
+	Current     byte
 }
 
 func Solve(reader io.Reader, expand bool) (int, error) {
@@ -57,7 +58,8 @@ func countWays(line string, expand bool) (int, error) {
 
 	fmt.Println(record, ways)
 	cache := make(map[PrecomputedEntry]int)
-	return countWaysRecurse(record, 0, ways, 0, cache), nil
+	// Append a '.' so we can assume the record end in a non-spring
+	return countWaysRecurse(record+".", 0, ways, 0, cache), nil
 }
 
 func countWaysRecurse(record string, offset int, ways []int, waysOffset int, cache map[PrecomputedEntry]int) int {
@@ -70,99 +72,46 @@ func countWaysRecurse(record string, offset int, ways []int, waysOffset int, cac
 		}
 	}
 	c := record[offset]
+	if count, ok := cache[PrecomputedEntry{offset, waysOffset, c}]; ok {
+		// fmt.Printf("cache hit offset: %d, waysOffset: %d, ways:%v, count: %d\n", offset, waysOffset, ways[waysOffset:], count)
+		return count
+	}
+	count := 0
 	switch c {
 	case '.':
-		return countWaysRecurse(record, offset+1, ways, waysOffset, cache)
+		count = countWaysRecurse(record, offset+1, ways, waysOffset, cache)
 	case '#':
-		if count, ok := findStreak(record, offset, ways, waysOffset); ok {
-			return countWaysRecurse(record, offset+count, ways, waysOffset+1, cache)
+		if findStreak(record, offset, ways, waysOffset) {
+			count = countWaysRecurse(record, offset+ways[waysOffset]+1, ways, waysOffset+1, cache)
 		} else {
-			return 0
+			count = 0
 		}
 	case '?':
-		return countWaysRecurse(record[:offset]+"#"+record[offset+1:], offset, ways, waysOffset, cache) +
+		count = countWaysRecurse(record[:offset]+"#"+record[offset+1:], offset, ways, waysOffset, cache) +
 			countWaysRecurse(record[:offset]+"."+record[offset+1:], offset, ways, waysOffset, cache)
 	default:
 		panic(fmt.Sprintf("invalid char: %c", c))
 	}
+	cache[PrecomputedEntry{offset, waysOffset, c}] = count
+	return count
 }
 
-func findStreak(record string, offset int, ways []int, waysOffset int) (int, bool) {
+func findStreak(record string, offset int, ways []int, waysOffset int) bool {
 	if waysOffset >= len(ways) {
-		return 0, false
+		return false
 	}
 	streak := ways[waysOffset]
 	if streak > len(record)-offset {
-		return 0, false
+		return false
 	}
 	for _, c := range record[offset : offset+streak] {
 		if c == '.' {
-			return 0, false
+			return false
 		}
 	}
-	if len(record)-offset == streak {
-		return streak, true
-	}
+	// Record will always end in an '.'
 	if record[offset+streak] == '#' {
-		return 0, false
+		return false
 	}
-	return streak + 1, true
+	return true
 }
-
-// func countWaysRecurse(record string, offset int, ways []int, waysOffset int, streak int, cache map[PrecomputedEntry]int) int {
-// 	// TOOD: check valid streaks
-// 	if offset >= len(record) && waysOffset < len(ways) {
-// 		return 0
-// 	}
-// 	//...
-// 	// Check cache
-// 	if waysOffset < len(ways) && streak == 0 {
-// 		if count, ok := cache[PrecomputedEntry{offset, ways[waysOffset]}]; ok {
-// 			fmt.Printf("success: %s\n", record)
-// 			return count
-// 		}
-// 	}
-// 	// We are done if remaining springs <= expected
-// 	known := 0
-// 	for i := offset; i < len(record); i++ {
-// 		if record[i] == '#' {
-// 			known += 1
-// 		}
-// 	}
-// 	expected := -offset
-// 	for _, way := range ways[waysOffset:] {
-// 		expected += way
-// 	}
-// 	if known == expected {
-// 		fmt.Printf("success: %s\n", record)
-// 		return 1
-// 	} else if known > expected {
-// 		return 0
-// 	}
-// 	// Recurse
-// 	c := record[offset]
-// 	switch c {
-// 	case '.':
-// 		if streak > 0 {
-// 			if ways[waysOffset] != streak {
-// 				return 0
-// 			}
-// 			return countWaysRecurse(record, offset+1, ways, waysOffset+1, 0, cache)
-// 		}
-// 		return countWaysRecurse(record, offset+1, ways, waysOffset, 0, cache)
-// 	case '#':
-// 		if waysOffset >= len(ways) {
-// 			return 0
-// 		}
-// 		streak += 1
-// 		if streak > ways[waysOffset] {
-// 			return 0
-// 		}
-// 		return countWaysRecurse(record, offset+1, ways, waysOffset, streak, cache)
-// 	case '?':
-// 		return countWaysRecurse(record[:offset]+"#"+record[offset+1:], offset, ways, waysOffset, streak, cache) +
-// 			countWaysRecurse(record[:offset]+"."+record[offset+1:], offset, ways, waysOffset, streak, cache)
-// 	default:
-// 		panic(fmt.Sprintf("invalid char: %c", c))
-// 	}
-// }
