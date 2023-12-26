@@ -19,8 +19,8 @@ func main() {
 	switch os.Args[1] {
 	case "1":
 		result, err = pkg.Solve1(f)
-	// case "2":
-	// 	result, err = pkg.Solve2(f)
+	case "2":
+		result, err = pkg.Solve2(f)
 	default:
 		err = fmt.Errorf("invalid argument")
 	}
