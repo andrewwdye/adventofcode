@@ -234,19 +234,56 @@ func (s *State) Energy() int {
 	return s.grid.Energy()
 }
 
-func (s *State) Run() int {
+func (s *State) Run(start Laser) int {
 	// First laser is always at the top left, moving right
-	s.lasers = []Laser{{x: 0, y: 0, dir: Right}}
+	s.Reset()
+	s.lasers = []Laser{start}
 	for i := 0; len(s.lasers) > 0 && (MAX_GRID_ROUNDS < 0 || i < MAX_GRID_ROUNDS); i++ {
 		if PRINT_GRID_PERIOD > 0 && i%PRINT_GRID_PERIOD == 0 {
 			fmt.Println(s.grid)
 		}
 		s.Tick()
 	}
-	return s.Energy()
+	energy := s.Energy()
+	// fmt.Println(start, energy)
+	return energy
 }
 
-func Solve1(reader io.Reader) (int, error) {
+func (s *State) Run2() int {
+	max := 0
+	for x := 0; x < len(s.grid[0]); x++ {
+		energy := s.Run(Laser{x, 0, Down})
+		if energy > max {
+			max = energy
+		}
+		energy = s.Run(Laser{x, len(s.grid) - 1, Up})
+		if energy > max {
+			max = energy
+		}
+	}
+	for y := 0; y < len(s.grid); y++ {
+		energy := s.Run(Laser{0, y, Right})
+		if energy > max {
+			max = energy
+		}
+		energy = s.Run(Laser{len(s.grid[0]) - 1, y, Left})
+		if energy > max {
+			max = energy
+		}
+	}
+	return max
+}
+
+func (s *State) Reset() {
+	for y := range s.grid {
+		for x := range s.grid[y] {
+			s.grid[y][x].Energized = false
+			s.grid[y][x].entered = map[Dir]bool{}
+		}
+	}
+}
+
+func NewState(reader io.Reader) State {
 	scanner := bufio.NewScanner(reader)
 	state := State{}
 	for scanner.Scan() {
@@ -256,6 +293,15 @@ func Solve1(reader io.Reader) (int, error) {
 		})
 		state.grid = append(state.grid, cells)
 	}
+	return state
+}
 
-	return state.Run(), nil
+func Solve1(reader io.Reader) (int, error) {
+	state := NewState(reader)
+	return state.Run(Laser{x: 0, y: 0, dir: Right}), nil
+}
+
+func Solve2(reader io.Reader) (int, error) {
+	state := NewState(reader)
+	return state.Run2(), nil
 }
