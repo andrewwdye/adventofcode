@@ -49,6 +49,20 @@ func (d Direction) String() string {
 	panic("invalid direction")
 }
 
+func DirectionFromEnum(dir int) Direction {
+	switch dir {
+	case 0:
+		return Right
+	case 1:
+		return Down
+	case 2:
+		return Left
+	case 3:
+		return Up
+	}
+	panic("invalid direction")
+}
+
 type Vertex struct {
 	X, Y     int
 	Dir      Direction
@@ -86,9 +100,6 @@ func (p *Polygon) Area() int {
 		area = -area
 	}
 	return area/2 + p.Perimeter/2 + 1
-	//  ## 0,0 1,0 p=4
-	//  ## 1,0 1,1
-	//
 }
 
 func (p *Polygon) String() string {
@@ -143,8 +154,53 @@ func NewPolygon(reader io.Reader) Polygon {
 	return polygon
 }
 
+func NewPolygon2(reader io.Reader) Polygon {
+	scanner := bufio.NewScanner(reader)
+	re := regexp.MustCompile(`[U|D|L|R] [0-9]+ \(#([0-9a-f]{5})([0-3])\)`)
+	polygon := Polygon{}
+	curr := Vertex{0, 0, Up, 0}
+	minX, minY := math.MaxInt, math.MaxInt
+	maxX, maxY := math.MinInt, math.MinInt
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := re.FindStringSubmatch(line)
+		if len(matches) != 3 {
+			panic(fmt.Sprint("invalid line", line))
+		}
+		dir := DirectionFromEnum(lo.Must(strconv.Atoi(matches[2])))
+		count := int(lo.Must(strconv.ParseInt(matches[1], 16, 32)))
+		polygon.Perimeter += count
+		curr = curr.Move(dir, count)
+		if curr.X < minX {
+			minX = curr.X
+		}
+		if curr.Y < minY {
+			minY = curr.Y
+		}
+		if curr.X > maxX {
+			maxX = curr.X
+		}
+		if curr.Y > maxY {
+			maxY = curr.Y
+		}
+		polygon.Vertices = append(polygon.Vertices, curr)
+	}
+	polygon.Width = maxX - minX + 1
+	polygon.Height = maxY - minY + 1
+	polygon.OffsetX = -minX
+	polygon.OffsetY = -minY
+	return polygon
+}
+
 func Solve1(reader io.Reader) (int, error) {
 	poly := NewPolygon(reader)
+	// fmt.Println(poly)
+	// fmt.Println(poly.String())
+	return poly.Area(), nil
+}
+
+func Solve2(reader io.Reader) (int, error) {
+	poly := NewPolygon2(reader)
 	// fmt.Println(poly)
 	// fmt.Println(poly.String())
 	return poly.Area(), nil
