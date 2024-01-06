@@ -125,6 +125,104 @@ func processPart(workflows map[string]Workflow, part Part) bool {
 	}
 }
 
+type Ranges struct {
+	min map[byte]int
+	max map[byte]int
+}
+
+func (r Ranges) Copy() Ranges {
+	other := Ranges{
+		make(map[byte]int, len(r.min)),
+		make(map[byte]int, len(r.max)),
+	}
+	for k, v := range r.min {
+		other.min[k] = v
+	}
+	for k, v := range r.max {
+		other.max[k] = v
+	}
+	return other
+}
+
+func (r Ranges) Ways() int {
+	ways := 1
+	for k := range r.min {
+		span := r.max[k] - r.min[k] + 1
+		if span > 0 {
+			ways *= span
+		}
+	}
+	return ways
+}
+
+func NewRanges() Ranges {
+	return Ranges{
+		min: map[byte]int{
+			'x': 1,
+			'm': 1,
+			'a': 1,
+			's': 1,
+		},
+		max: map[byte]int{
+			'x': 4000,
+			'm': 4000,
+			'a': 4000,
+			's': 4000,
+		},
+	}
+}
+
+type Elem struct {
+	workflow Workflow
+	ranges   Ranges
+}
+
+func ways(workflowLines []string) int {
+	workflows := getWorkflows(workflowLines)
+
+	elems := []Elem{
+		{
+			workflows["in"],
+			NewRanges(),
+		},
+	}
+	ways := 0
+	for len(elems) > 0 {
+		elem := elems[0]
+		elems = elems[1:]
+		remaining := elem.ranges.Copy()
+		for _, rule := range elem.workflow.Rules {
+			thisRange := remaining.Copy()
+			if rule.Comparator == '<' {
+				if rule.Value-1 < thisRange.max[rule.Category] {
+					thisRange.max[rule.Category] = rule.Value - 1
+				}
+				if rule.Value > remaining.min[rule.Category] {
+					remaining.min[rule.Category] = rule.Value
+				}
+			} else if rule.Comparator == '>' {
+				if rule.Value+1 > thisRange.min[rule.Category] {
+					thisRange.min[rule.Category] = rule.Value + 1
+				}
+				if rule.Value < remaining.max[rule.Category] {
+					remaining.max[rule.Category] = rule.Value
+				}
+			}
+			switch rule.Destination {
+			case "R":
+				continue
+			case "A":
+				ways += thisRange.Ways()
+			}
+			elems = append(elems, Elem{
+				workflows[rule.Destination],
+				thisRange,
+			})
+		}
+	}
+	return ways
+}
+
 func Solve1(reader io.Reader) (int, error) {
 	scanner := bufio.NewScanner(reader)
 
@@ -144,4 +242,19 @@ func Solve1(reader io.Reader) (int, error) {
 	}
 
 	return process(workflows, parts), nil
+}
+
+func Solve2(reader io.Reader) (int, error) {
+	scanner := bufio.NewScanner(reader)
+
+	workflows := []string{}
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			break
+		}
+		workflows = append(workflows, line)
+	}
+
+	return ways(workflows), nil
 }
