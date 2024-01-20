@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -44,10 +45,43 @@ func run(modules map[string]Module, count int) int {
 	return totals[Low] * totals[High]
 }
 
+func run2(modules map[string]Module) int {
+	count := 0
+	for {
+		round(modules)
+		count += 1
+		if vd, ok := modules["vd"]; ok {
+			vd := vd.(*ConjunctionModule)
+			for source, p := range vd.recentPulses {
+				if p == High {
+					fmt.Printf("source: %s, count: %d\n", source, count)
+				}
+			}
+		}
+		if rx, ok := modules["rx"]; ok && rx.(*RxModule).Activated {
+			return count
+		}
+	}
+}
+
 func Solve1(reader io.Reader) (int, error) {
 	modules := getModules(reader)
 	// for name, m := range modules {
 	// 	fmt.Println(name, m)
 	// }
 	return run(modules, 1000), nil
+}
+
+func Solve2(reader io.Reader) (int, error) {
+	modules := getModules(reader)
+	// for name, m := range modules {
+	// 	fmt.Println(name, m)
+	// }
+	// g := NewGraph(modules)
+	// f, err := os.Create("/tmp/graph.dot")
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// g.OutputDOT(f)
+	return run2(modules), nil
 }

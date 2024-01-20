@@ -108,6 +108,26 @@ func (m *ConjunctionModule) Send(in Pulse, from string) *Pulse {
 	return &v
 }
 
+type RxModule struct {
+	BaseModule
+	Activated bool
+}
+
+func (m *RxModule) Name() string {
+	return m.name
+}
+
+func (m *RxModule) Destinations() []string {
+	return m.destinations
+}
+
+func (m *RxModule) Send(in Pulse, from string) *Pulse {
+	if in == Low {
+		m.Activated = true
+	}
+	return nil
+}
+
 func getModules(reader io.Reader) map[string]Module {
 	modules := make(map[string]Module)
 	re := regexp.MustCompile(`(.+) -> (.+)`)
@@ -148,6 +168,13 @@ func getModules(reader io.Reader) map[string]Module {
 			}
 		}
 		modules[module.Name()] = module
+	}
+	// Add an rx module
+	modules["rx"] = &RxModule{
+		BaseModule: BaseModule{
+			name: "rx",
+		},
+		Activated: false,
 	}
 	for _, module := range modules {
 		for _, dest := range module.Destinations() {
