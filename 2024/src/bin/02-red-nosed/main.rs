@@ -44,8 +44,32 @@ fn solve1<R: BufRead>(input: &mut R) -> Result<i32, std::io::Error>{
     Ok(safe)
 }
 
-fn solve2<R: BufRead>(_: &mut R) -> Result<i32, std::io::Error>{
-    unimplemented!()
+fn solve2<R: BufRead>(input: &mut R) -> Result<i32, std::io::Error>{
+    let mut safe = 0; 
+'outer:
+    for line in input.lines() {
+        let levels = line?
+            .split(' ')
+            .map(|s| s.parse::<i32>().unwrap())
+            .collect::<Vec<i32>>();
+        for skip in 0..levels.len() {
+            let filtered = levels.iter().enumerate().filter(|&(i, _)| i != skip).map(|(_, x)| *x);
+            let diffs = filtered.clone().zip(filtered.clone().skip(1)).map(|(x, y)| y - x);
+            let increasing = diffs.clone().next().unwrap() > 0;
+            if diffs.clone().all(|x| {
+                x.abs() >= 1 && x.abs() <= 3 &&
+                if increasing {
+                    x > 0
+                } else {
+                    x < 0
+                }
+            }) {
+                safe += 1;
+                continue 'outer;
+            }
+        }
+    }
+    Ok(safe)
 }
 
 #[cfg(test)]
@@ -54,7 +78,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sample() {
+    fn test_part1() {
         let input = "7 6 4 2 1
 1 2 7 8 9
 9 7 6 2 1
@@ -62,5 +86,16 @@ mod tests {
 8 6 4 4 1
 1 3 6 7 9";
         assert_eq!(solve1(&mut BufReader::new(input.as_bytes())).unwrap(), 2);
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = "7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9";
+        assert_eq!(solve2(&mut BufReader::new(input.as_bytes())).unwrap(), 4);
     }
 }

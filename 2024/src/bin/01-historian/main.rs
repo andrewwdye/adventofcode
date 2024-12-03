@@ -70,22 +70,22 @@ mod tests {
     #[test]
     fn test_part1() {
         let input = "3   4
-        4   3
-        2   5
-        1   3
-        3   9
-        3   3";
+4   3
+2   5
+1   3
+3   9
+3   3";
         assert_eq!(solve1(&mut BufReader::new(input.as_bytes())).unwrap(), 11);
     }
 
     #[test]
     fn test_part2() {
         let input = "3   4
-        4   3
-        2   5
-        1   3
-        3   9
-        3   3";
+4   3
+2   5
+1   3
+3   9
+3   3";
         assert_eq!(solve2(&mut BufReader::new(input.as_bytes())).unwrap(), 31);
     }
 }
