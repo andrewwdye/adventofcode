@@ -1,6 +1,5 @@
 use clap::Parser;
-use std::io::{BufRead, BufReader};
-use std::fs::File;
+use std::fs::read_to_string;
 
 #[derive(Parser)]
 struct Cli {
@@ -12,20 +11,21 @@ struct Cli {
 
 fn main() -> Result<(), std::io::Error>{
     let cli = Cli::parse();
+    let input = read_to_string(cli.input)?;
     let result = match cli.part {
-        1 => solve1(&mut BufReader::new(File::open(cli.input)?))?,
-        2 => solve2(&mut BufReader::new(File::open(cli.input)?))?,
+        1 => solve1(input.as_str())?,
+        2 => solve2(input.as_str())?,
         _ => unreachable!(),
     };
     print!("{result}");
     Ok(())
 }
 
-fn solve1<R: BufRead>(input: &mut R) -> Result<i32, std::io::Error>{
+fn solve1(input: &str) -> Result<i32, std::io::Error>{
     unimplemented!()
 }
 
-fn solve2<R: BufRead>(input: &mut R) -> Result<i32, std::io::Error>{
+fn solve2(_: &str) -> Result<i32, std::io::Error>{
     unimplemented!()
 }
 
@@ -35,6 +35,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sample() {
+    fn test_part1() {
     }
 }
