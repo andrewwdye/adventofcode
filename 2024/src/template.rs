@@ -17,7 +17,7 @@ fn main() -> Result<(), std::io::Error>{
         2 => solve2(input.as_str())?,
         _ => unreachable!(),
     };
-    print!("{result}");
+    println!("{result}");
     Ok(())
 }
 
