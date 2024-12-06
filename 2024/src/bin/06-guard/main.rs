@@ -34,12 +34,38 @@ fn solve1(input: &str) -> Result<i32, std::io::Error>{
     Ok(visited.len() as i32)
 }
 
-fn solve2(_: &str) -> Result<i32, std::io::Error>{
-    unimplemented!()
+fn solve2(input: &str) -> Result<i32, std::io::Error>{
+    let room: Room = input.lines()
+        .map(|line| line.chars().collect::<Vec<char>>())
+        .collect::<Vec<Vec<char>>>();
+    let guard = find_guard(&room);
+    let mut stuck = 0;
+    for y in 0..room.len() {
+        for x in 0..room[y].len() {
+            if room[y][x] != '.' {
+                continue;
+            }
+            // TODO: could also prerun and check for places to put an obstruction based on what we visited
+            let mut guard = guard.clone();
+            let mut room = room.clone();
+            room[y][x] = '#';
+            let mut visited: HashSet<Guard> = HashSet::new();
+            while guard.in_room(&room) {
+                if visited.contains(&guard) {
+                    stuck += 1;
+                    break;
+                }
+                visited.insert(guard);
+                guard.step(&room);
+            }
+        }
+    }
+    Ok(stuck)
 }
 
 type Room = Vec<Vec<char>>;
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum Direction {
     Up,
     Down,
@@ -61,6 +87,7 @@ impl Location {
 
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 struct Guard {
     location: Location,
     direction: Direction
@@ -125,5 +152,10 @@ mod tests {
     #[test]
     fn test_part1() {
         assert_eq!(solve1(SAMPLE_INPUT).unwrap(), 41);
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(solve2(SAMPLE_INPUT).unwrap(), 6);
     }
 }
