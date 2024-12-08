@@ -73,8 +73,41 @@ fn solve1(input: &str) -> Result<i32, std::io::Error>{
     Ok(antinodes.len() as i32)
 }
 
-fn solve2(_: &str) -> Result<i32, std::io::Error>{
-    unimplemented!()
+fn solve2(input: &str) -> Result<i32, std::io::Error>{
+    let map = FrequencyMap::new(input);
+    let mut antinodes: HashSet<Location> = HashSet::new();
+    for (_, locations) in map.locations.into_iter() {
+        if locations.len() < 2 {
+            continue;
+        }
+        for (i, l1) in locations.iter().enumerate() {
+            for l2 in locations[i+1..].iter() {
+                antinodes.insert(*l1);
+                antinodes.insert(*l2);
+                let dx = l1.x - l2.x;
+                let dy = l1.y - l2.y;
+                let mut l = l1.clone();
+                loop {
+                    let a = Location{ x: l.x + dx, y: l.y + dy };
+                    if a.x < 0 || a.x >= map.width || a.y < 0 || a.y >= map.height {
+                        break;
+                    }
+                    antinodes.insert(a);
+                    l = a;
+                }
+                l = l2.clone();
+                loop {
+                    let a = Location{ x: l.x - dx, y: l.y - dy };
+                    if a.x < 0 || a.x >= map.width || a.y < 0 || a.y >= map.height {
+                        break;
+                    }
+                    antinodes.insert(a);
+                    l = a;
+                }
+            }
+        }
+    }
+    Ok(antinodes.len() as i32)
 }
 
 #[cfg(test)]
@@ -95,8 +128,29 @@ mod tests {
 ............
 ............";
 
+    const T_FREQUENCY_SAMPLE_INPUT: &str = "T.........
+...T......
+.T........
+..........
+..........
+..........
+..........
+..........
+..........
+..........";
+
     #[test]
     fn test_sample_part1() {
         assert_eq!(solve1(SAMPLE_INPUT).unwrap(), 14);
+    }
+
+    #[test]
+    fn test_sample_part2() {
+        assert_eq!(solve2(SAMPLE_INPUT).unwrap(), 34);
+    }
+
+    #[test]
+    fn test_t_frequency() {
+        assert_eq!(solve2(T_FREQUENCY_SAMPLE_INPUT).unwrap(), 9);
     }
 }
