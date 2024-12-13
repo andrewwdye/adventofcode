@@ -31,7 +31,6 @@ fn solve2(_: &str) -> Result<i32, std::io::Error>{
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
     const SAMPLE_INPUT: &str = "";
