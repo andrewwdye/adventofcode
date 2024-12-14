@@ -98,8 +98,38 @@ fn explore(map: &Map, x: usize, y: usize, seek: u8) -> HashSet<(usize, usize)> {
     all
 }
 
-fn solve2(_: &str) -> Result<i32, std::io::Error>{
-    unimplemented!()
+fn solve2(input: &str) -> Result<i32, std::io::Error>{
+    let m = Map::new(input);
+    let mut total = 0;
+    for y in 0..m.height() {
+        for x in 0..m.width() {
+            let score = explore2(&m, x, y, 0);
+            total += score as i32;
+        }
+    }
+    Ok(total)
+}
+
+fn explore2(map: &Map, x: usize, y: usize, seek: u8) -> i32 {
+    let elevation = map.at(x, y);
+    if elevation != seek {
+        return 0;
+    }
+    if elevation == 9 {
+        return 1;
+    }
+    let mut ways = 0;
+    for (dx, dy) in &[(0, -1), (1, 0), (0, 1), (-1, 0)] {
+        let nx = x as i32 + dx;
+        let ny = y as i32 + dy;
+        if nx < 0 || nx >= map.width() as i32 || ny < 0 || ny >= map.height() as i32 {
+            continue;
+        }
+        let nx = nx as usize;
+        let ny = ny as usize;
+        ways += explore2(map, nx, ny, elevation + 1);
+    }
+    ways
 }
 
 #[cfg(test)]
@@ -118,5 +148,10 @@ mod tests {
     #[test]
     fn test_part1() {
         assert_eq!(solve1(SAMPLE_INPUT).unwrap(), 36);
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(solve2(SAMPLE_INPUT).unwrap(), 81);
     }
 }
