@@ -1,4 +1,5 @@
 use clap::Parser;
+use nalgebra as na;
 use std::fs::read_to_string;
 
 
@@ -39,7 +40,7 @@ impl Machine {
     }
 }
 
-fn solve1(input: &str) -> Result<i32, std::io::Error>{
+fn solve1(input: &str) -> Result<i64, std::io::Error>{
     let mut lines = input.lines();
     let mut machines = Vec::new();
     while lines.clone().peekable().peek().is_some() {
@@ -63,11 +64,47 @@ fn solve1(input: &str) -> Result<i32, std::io::Error>{
             sum += tokens;
         }
     }
-    Ok(sum)
+    Ok(sum as i64)
 }
 
-fn solve2(_: &str) -> Result<i32, std::io::Error>{
-    unimplemented!()
+struct Machine2 {
+    a: (i64, i64),
+    b: (i64, i64),
+    prize: (i64, i64)
+}
+
+impl Machine2 {
+    fn new(lines: &mut std::str::Lines) -> Self {
+        let re = regex::Regex::new(r"\d+").unwrap();
+        let a: Vec<i64> = re.find_iter(lines.next().unwrap()).map(|m| m.as_str().parse::<i64>().unwrap()).collect();
+        let b: Vec<i64> = re.find_iter(lines.next().unwrap()).map(|m| m.as_str().parse::<i64>().unwrap()).collect();
+        let prize: Vec<i64> = re.find_iter(lines.next().unwrap()).map(|m| m.as_str().parse::<i64>().unwrap()).collect();
+        _ = lines.next();
+        Machine2 { a: (a[0], a[1]), b: (b[0], b[1]), prize: (prize[0] + 10000000000000, prize[1] + 10000000000000) }
+    }
+}
+
+fn solve2(input: &str) -> Result<i64, std::io::Error>{
+    let mut lines = input.lines();
+    let mut machines = Vec::new();
+    while lines.clone().peekable().peek().is_some() {
+        let m = Machine2::new(&mut lines);
+        machines.push(m);
+    }
+    let mut sum = 0;
+    for m in machines {
+        let counts = na::Matrix2::new(m.a.0 as f64, m.b.0 as f64, m.a.1 as f64, m.b.1 as f64);
+        let prize = na::Vector2::new(m.prize.0 as f64, m.prize.1 as f64);
+        let lu: nalgebra::LU<f64, nalgebra::Const<2>, nalgebra::Const<2>> = na::LU::new(counts);
+        let presses = lu.solve(&prize).unwrap();
+        let a_presses = presses[0].round() as i64;
+        let b_presses = presses[1].round() as i64;
+        if m.a.0 * a_presses + m.b.0 * b_presses == m.prize.0 && m.a.1 * a_presses + m.b.1 * b_presses == m.prize.1 {
+            let tokens = 3 * a_presses + b_presses;
+            sum += tokens;
+        }
+    }
+    Ok(sum)
 }
 
 #[cfg(test)]
@@ -93,5 +130,10 @@ Prize: X=18641, Y=10279";
     #[test]
     fn test_part1() {
         assert_eq!(solve1(SAMPLE_INPUT).unwrap(), 480);
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(solve2(SAMPLE_INPUT).unwrap(), 875318608908);
     }
 }
