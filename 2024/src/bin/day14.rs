@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::fs::read_to_string;
+use std::{fs::read_to_string, thread::sleep};
 
 #[derive(Parser)]
 struct Cli {
@@ -88,8 +88,36 @@ fn solve1_internal(input: &str, width: i32, height: i32) -> Result<i32, std::io:
     Ok(mult)
 }
 
-fn solve2(_: &str) -> Result<i32, std::io::Error>{
-    unimplemented!()
+fn solve2(input: &str) -> Result<i32, std::io::Error>{
+    let width = 101;
+    let height = 103;
+    let mut guards: Vec<Guard> = Vec::new();
+    for line in input.lines() {
+        guards.push(Guard::new(line, width, height));
+    }
+    'search:
+    for i in 1.. {
+        let mut grid = vec![vec![0; width as usize]; height as usize];
+        for g in &guards {
+            let (x, y) = g.simulate_steps(i);
+            grid[y as usize][x as usize] = 1;
+        }
+        for row in &grid {
+            if row.iter().map(|&c| if c > 0 { 1 } else { 0 }).sum::<i32>() > 30 {
+                println!("{} seconds:", i);
+                for row in grid {
+                    for cell in row {
+                        let c = if cell > 0 { '*' } else { ' ' };
+                        print!("{}", c);
+                    }
+                    println!();
+                }
+                sleep(std::time::Duration::from_secs(1));
+                continue 'search;
+            }
+        }
+    }
+    Ok(0)
 }
 
 #[cfg(test)]
