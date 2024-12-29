@@ -1,5 +1,6 @@
 use clap::Parser;
-use std::{collections::HashSet, fs::read_to_string};
+use core::cmp::Reverse;
+use std::{collections::BinaryHeap, collections::HashSet, fs::read_to_string};
 
 #[derive(Parser)]
 struct Cli {
@@ -32,7 +33,7 @@ fn solve2(_: &str) -> Result<i32, std::io::Error> {
 
 type Location = (i32, i32);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 enum Direction {
     North = 0,
     East,
@@ -69,6 +70,25 @@ impl Direction {
     }
 }
 
+#[derive(Eq, PartialEq)]
+struct Entry {
+    location: Location,
+    direction: Direction,
+    cost: i32,
+}
+
+impl Ord for Entry {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.cost.cmp(&other.cost)
+    }
+}
+
+impl PartialOrd for Entry {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.cost.partial_cmp(&other.cost)
+    }
+}
+
 struct Maze {
     grid: Vec<Vec<char>>,
     start: Location,
@@ -82,43 +102,37 @@ impl Maze {
     }
 
     fn solve(&self) -> i32 {
-        return self.recurse(self.start, Direction::East, &mut HashSet::new());
-    }
-
-    fn recurse(
-        &self,
-        location: Location,
-        direction: Direction,
-        visited: &mut HashSet<Location>,
-    ) -> i32 {
-        let element = self.grid[location.1 as usize][location.0 as usize];
-        if element == 'E' {
-            return 0;
-        }
-        if element == '#' || visited.contains(&location) {
-            return i32::MAX;
-        }
-        visited.insert(location);
-        // Loop over each dir and find cheapest path
-        let mut min_cost = i32::MAX;
-        for (dir, turn_cost) in [
-            (direction, 0),
-            (direction.left(), 1000),
-            (direction.right(), 1000),
-        ] {
-            let (dx, dy) = dir.steps();
-            let next = (location.0 + dx, location.1 + dy);
-            let recurse_cost = self.recurse(next, dir, visited);
-            if recurse_cost == i32::MAX {
+        let mut visited = HashSet::new();
+        let mut h: BinaryHeap<Reverse<Entry>> = BinaryHeap::new();
+        h.push(Reverse(Entry {
+            location: self.start,
+            direction: Direction::East,
+            cost: 0,
+        }));
+        loop {
+            let entry = h.pop().unwrap().0;
+            let element = self.grid[entry.location.1 as usize][entry.location.0 as usize];
+            if element == 'E' {
+                return entry.cost;
+            }
+            if element == '#' || visited.contains(&entry.location) {
                 continue;
             }
-            let cost = recurse_cost + 1 + turn_cost;
-            if cost < min_cost {
-                min_cost = cost;
+            visited.insert(entry.location);
+            for (dir, turn_cost) in [
+                (entry.direction, 0),
+                (entry.direction.left(), 1000),
+                (entry.direction.right(), 1000),
+            ] {
+                let (dx, dy) = dir.steps();
+                let next = (entry.location.0 + dx, entry.location.1 + dy);
+                h.push(Reverse(Entry {
+                    location: next,
+                    direction: dir,
+                    cost: entry.cost + turn_cost + 1,
+                }));
             }
         }
-        visited.remove(&location);
-        min_cost
     }
 }
 
