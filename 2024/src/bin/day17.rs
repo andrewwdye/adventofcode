@@ -27,11 +27,26 @@ fn solve1(input: &str) -> Result<String, std::io::Error> {
     let program = Program::new(&mut lines);
     println!("{:?}", computer);
     println!("{:?}", program);
-    Ok(computer.run(&program).to_string())
+    Ok(computer
+        .run(&program)
+        .iter()
+        .map(|i| i.to_string())
+        .collect::<Vec<String>>()
+        .join(","))
 }
 
-fn solve2(_: &str) -> Result<String, std::io::Error> {
-    unimplemented!()
+fn solve2(input: &str) -> Result<String, std::io::Error> {
+    let mut lines = input.lines();
+    let computer = Computer::new(&mut lines);
+    let program = Program::new(&mut lines);
+    let mut c = computer.clone();
+    let a = 0;
+    // c.registers[A] = a;
+    let result = c.run(&program);
+    if result == program.instructions {
+        return Ok(a.to_string());
+    }
+    Ok("".to_string())
 }
 
 #[derive(Debug)]
@@ -81,7 +96,7 @@ impl From<i32> for Opcode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Computer {
     registers: [i32; 3],
     ip: usize,
@@ -109,17 +124,17 @@ impl Computer {
         Computer { registers, ip: 0 }
     }
 
-    fn run(&mut self, program: &Program) -> String {
+    fn run(&mut self, program: &Program) -> Vec<i32> {
         self.ip = 0;
-        let mut result: Vec<String> = Vec::new();
+        let mut result: Vec<i32> = Vec::new();
         while self.ip < program.instructions.len() - 1 {
             let instruction = program.instructions[self.ip].into();
             let operand = program.instructions[self.ip + 1];
             if let Some(value) = self.do_instruction(instruction, operand) {
-                result.push(value.to_string());
+                result.push(value);
             }
         }
-        result.join(",")
+        result
     }
 
     fn do_instruction(&mut self, instruction: Opcode, operand: i32) -> Option<i32> {
@@ -131,17 +146,17 @@ impl Computer {
             6 => self.registers[C],
             _ => unreachable!(),
         };
-        println!("ip:         {:?}", self.ip);
+        println!("ip:         {}", self.ip);
         println!("registers   {:?}", self.registers);
         println!("instruction {:?}", instruction);
-        println!("operand     {:?}/{:?}", literal_operand, combo_operand);
+        println!("operand     {:#o}/{:#o}", literal_operand, combo_operand);
         self.ip += 2;
         let mut out = None;
         const BASE_2: i32 = 2;
         match instruction {
             Opcode::Adv => {
                 println!(
-                    "operation   reg[A] = {:?}/2^{:?} = {:?}",
+                    "operation   A = A >> combo = {:#o} >> {:o} = {:#o}",
                     self.registers[A],
                     combo_operand,
                     self.registers[A] / BASE_2.pow(combo_operand as u32)
@@ -150,7 +165,7 @@ impl Computer {
             }
             Opcode::Bxl => {
                 println!(
-                    "operation   reg[B] = {:?} XOR {:?} = {:?}",
+                    "operation   B = B XOR literal = {:#b} XOR {:#b} = {:#o}",
                     self.registers[B],
                     literal_operand,
                     self.registers[B] ^ literal_operand
@@ -159,7 +174,7 @@ impl Computer {
             }
             Opcode::Bst => {
                 println!(
-                    "operation   reg[B] = {:?} % 8 = {:?}",
+                    "operation   B = B % 8 = {:#o} % 8 = {:#o}",
                     combo_operand,
                     combo_operand % 8
                 );
@@ -167,7 +182,7 @@ impl Computer {
             }
             Opcode::Jnz => {
                 if self.registers[A] != 0 {
-                    println!("operation   ip = {:?}", literal_operand);
+                    println!("operation   ip = {}", literal_operand);
                     self.ip = literal_operand as usize;
                 } else {
                     println!("operation   nop");
@@ -175,7 +190,7 @@ impl Computer {
             }
             Opcode::Bxc => {
                 println!(
-                    "operation   reg[B] = {:?} XOR {:?} = {:?}",
+                    "operation   B = B XOR C = {:#b} XOR {:#b} = {:#o}",
                     self.registers[B],
                     self.registers[C],
                     self.registers[B] ^ self.registers[C]
@@ -184,7 +199,7 @@ impl Computer {
             }
             Opcode::Out => {
                 println!(
-                    "operation   out << {:?} % 8 = {:?}",
+                    "operation   out << combo % 8 = {:#o} % 8 = {:#o}",
                     combo_operand,
                     combo_operand % 8
                 );
@@ -192,7 +207,7 @@ impl Computer {
             }
             Opcode::Bdv => {
                 println!(
-                    "operation   reg[B] = {:?}/2^{:?} = {:?}",
+                    "operation   B = A >> combo = {:#o} >> {:o} = {:#o}",
                     self.registers[A],
                     combo_operand,
                     self.registers[A] / BASE_2.pow(combo_operand as u32)
@@ -201,7 +216,7 @@ impl Computer {
             }
             Opcode::Cdv => {
                 println!(
-                    "operation   reg[C] = {:?}/2^{:?} = {:?}",
+                    "operation   C = A >> combo = {:#o} >> {:o} = {:#o}",
                     self.registers[A],
                     combo_operand,
                     self.registers[A] / BASE_2.pow(combo_operand as u32)
@@ -239,15 +254,26 @@ impl Program {
 mod tests {
     use super::*;
 
-    const SAMPLE_INPUT: &str = "Register A: 729
+    const SAMPLE_INPUT1: &str = "Register A: 729
 Register B: 0
 Register C: 0
 
 Program: 0,1,5,4,3,0";
 
+    const SAMPLE_INPUT2: &str = "Register A: 2024
+Register B: 0
+Register C: 0
+
+Program: 0,3,5,4,3,0";
+
     #[test]
     fn test_part1() {
-        assert_eq!(solve1(SAMPLE_INPUT).unwrap(), "4,6,3,5,6,3,5,2,1,0");
+        assert_eq!(solve1(SAMPLE_INPUT1).unwrap(), "4,6,3,5,6,3,5,2,1,0");
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(solve2(SAMPLE_INPUT2).unwrap(), "0,3,5,4,3,0");
     }
 
     #[test]
@@ -272,7 +298,7 @@ Program: 0,1,5,4,3,0";
             instructions: vec![5, 0, 5, 1, 5, 4],
         };
         let result = c.run(&p);
-        assert_eq!(result, "0,1,2");
+        assert_eq!(result, vec![0, 1, 2]);
 
         // If register A contains 2024, the program 0,1,5,4,3,0 would output 4,2,5,6,7,7,7,7,3,1,0 and leave 0 in register A.
         let mut c = Computer {
@@ -283,7 +309,7 @@ Program: 0,1,5,4,3,0";
             instructions: vec![0, 1, 5, 4, 3, 0],
         };
         let result = c.run(&p);
-        assert_eq!(result, "4,2,5,6,7,7,7,7,3,1,0");
+        assert_eq!(result, vec![4, 2, 5, 6, 7, 7, 7, 7, 3, 1, 0]);
         assert_eq!(c.registers[A], 0);
 
         // If register B contains 29, the program 1,7 would set register B to 26.
